@@ -122,7 +122,7 @@ function createPanZoom(domElement, options) {
     dispose: dispose,
     moveBy: internalMoveBy,
     moveTo: moveTo,
-    smoothMoveTo: smoothMoveTo, 
+    smoothMoveTo: smoothMoveTo,
     centerOn: centerOn,
     zoomTo: publicZoomTo,
     zoomAbs: zoomAbs,
@@ -150,7 +150,7 @@ function createPanZoom(domElement, options) {
   };
 
   eventify(api);
-  
+
   var initialX = typeof options.initialX === 'number' ? options.initialX : transform.x;
   var initialY = typeof options.initialY === 'number' ? options.initialY : transform.y;
   var initialZoom = typeof options.initialZoom === 'number' ? options.initialZoom : transform.scale;
@@ -680,6 +680,15 @@ function createPanZoom(domElement, options) {
       var t2 = e.touches[1];
       var currentPinchLength = getPinchZoomLength(t1, t2);
 
+      // A two-finger `touchmove` can reach this document-level handler without a
+      // preceding two-finger `touchstart` on the element having set
+      // `pinchZoomLength` (notably on iOS Safari when the element is re-rendered
+      // mid-gesture).
+      // Seed it from the current frame so the first move is a no-op.
+      if (pinchZoomLength === undefined) {
+        pinchZoomLength = currentPinchLength;
+      }
+
       // since the zoom speed is always based on distance from 1, we need to apply
       // pinch speed only on that distance from 1:
       var scaleMultiplier =
@@ -1099,4 +1108,3 @@ function autoRun() {
 }
 
 autoRun();
-	
