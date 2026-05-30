@@ -683,8 +683,7 @@ function createPanZoom(domElement, options) {
       // A two-finger `touchmove` can reach this document-level handler without a
       // preceding two-finger `touchstart` on the element having set
       // `pinchZoomLength` (notably on iOS Safari when the element is re-rendered
-      // mid-gesture).
-      // Seed it from the current frame so the first move is a no-op.
+      // mid-gesture). Seed it from the current frame so the first move is a no-op.
       if (pinchZoomLength === undefined) {
         pinchZoomLength = currentPinchLength;
       }
@@ -704,9 +703,23 @@ function createPanZoom(domElement, options) {
         mouseY = offset.y;
       }
 
-      publicZoomTo(mouseX, mouseY, scaleMultiplier);
+      // Only zoom when every value is a finite number.
+      // Touch points or the owner rect can resolve to NaN
+      // (malformed/synthetic touch events, degenerate layout),
+      // which would otherwise make `zoomByRatio` throw "zoom requires valid
+      // numbers". Bail out of the frame instead of throwing.
+      if (
+        Number.isFinite(mouseX) &&
+        Number.isFinite(mouseY) &&
+        Number.isFinite(scaleMultiplier)
+      ) {
+        publicZoomTo(mouseX, mouseY, scaleMultiplier);
+      }
 
-      pinchZoomLength = currentPinchLength;
+      // Avoid poisoning the next frame with a NaN baseline.
+      if (Number.isFinite(currentPinchLength)) {
+        pinchZoomLength = currentPinchLength;
+      }
       e.stopPropagation();
       e.preventDefault();
     }
